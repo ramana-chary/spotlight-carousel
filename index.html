@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotlight Carousel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f6f0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 1300px;
+            padding: 50px 0px;
+            margin: auto;
+            position: relative;
+            overflow: visible;
+        }
+
+        .images-wrapper {
+            width: 100%;
+            overflow: visible;
+            position: relative;
+            height: 500px;
+        }
+
+        .images {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            flex-wrap: nowrap;
+            position: relative;
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+            height: 500px;
+        }
+
+        .images img {
+            border-radius: 20px;
+            object-fit: cover;
+            cursor: pointer;
+            filter: brightness(1) saturate(0.7);
+            transform: scale(0.95);
+            flex-shrink: 0;
+            width: 300px;
+            height: 200px;
+            transition:
+                width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                height 1s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .images img.main-image {
+            width: 700px;
+            height: 500px;
+            filter: brightness(1) saturate(1);
+            transform: scale(1);
+        }
+
+        .content-section {
+            position: absolute;
+            left: 700px;
+            top: 40px;
+            z-index: 10;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            transition: all var(--text-anim-duration, 0.8s) ease;
+        }
+
+        .content-section h2 {
+            color: #2c5530;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.3;
+            transition: all 0.8s ease;
+        }
+
+        .content-section p {
+            color: #4a5568;
+            font-size: 16px;
+            line-height: 1.6;
+            transition: all 0.8s ease;
+        }
+
+        .content-section.fade-out {
+            opacity: 0;
+            transform: translateY(60px);
+        }
+
+        .content-section.fade-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .content-section.slide-out {
+            opacity: 0;
+            transform: translateX(60px);
+        }
+
+        .content-section.slide-in {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Autoplay progress indicator */
+        .autoplay-progress {
+            width: 100%;
+            height: 3px;
+            background: rgba(44, 85, 48, 0.12);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #2c5530;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        /* Customize panel */
+        .customize-panel {
+            margin-top: 16px;
+            background: #14141c;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 28px;
+        }
+
+        .customize-title {
+            color: #f0f0f5;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .customize-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .customize-field {
+            flex: 1 1 220px;
+            background: #1c1c26;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .customize-field label {
+            color: #9a9aa8;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Dropdown field */
+        .select-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .select-wrap select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent;
+            border: none;
+            color: #f0f0f5;
+            font-size: 14px;
+            font-weight: 600;
+            padding-right: 20px;
+            cursor: pointer;
+            outline: none;
+            text-align: right;
+        }
+
+        .select-wrap select option {
+            background: #1c1c26;
+            color: #f0f0f5;
+        }
+
+        .select-chevron {
+            position: absolute;
+            right: 0;
+            color: #9a9aa8;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        /* Slider field */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-row input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 110px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 5px;
+            height: 18px;
+            border-radius: 3px;
+            background: #f0f0f5;
+            cursor: pointer;
+        }
+
+        .slider-row input[type="range"]::-moz-range-thumb {
+            width: 5px;
+            height: 18px;
+            border: none;
+            border-radius: 3px;
+            background: #f0f0f5;
+            cursor: pointer;
+        }
+
+        .slider-row .field-value {
+            color: #f0f0f5;
+            font-size: 14px;
+            font-weight: 700;
+            min-width: 34px;
+            text-align: right;
+        }
+
+        /* Toggle switch field */
+        .toggle-switch {
+            position: relative;
+            width: 42px;
+            height: 24px;
+            border: none;
+            border-radius: 999px;
+            background: #2a2a36;
+            cursor: pointer;
+            padding: 0;
+            flex-shrink: 0;
+            transition: background 0.2s ease;
+        }
+
+        .toggle-switch.active {
+            background: #3f3f52;
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f0f0f5;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(18px);
+        }
+
+        @media (max-width: 900px) {
+            .customize-panel {
+                padding: 20px;
+            }
+
+            .customize-field {
+                flex: 1 1 100%;
+            }
+        }
+
+        /* Navigation buttons */
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #2c5530;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-button.prev {
+            left: 20px;
+        }
+
+        .nav-button.next {
+            right: 20px;
+        }
+
+        @media (min-width:800px) and (max-width:1200px) {
+            .container {
+                width: 900px;
+            }
+
+            .images img.main-image {
+                width: 500px;
+                height: 350px;
+            }
+
+            .images img {
+                width: 200px;
+                height: 150px;
+            }
+
+            .images {
+                height: 350px;
+            }
+
+            .images-wrapper {
+                height: 350px;
+            }
+
+            .content-section {
+                left: 500px;
+                max-width: 450px;
+            }
+
+            .content-section h2 {
+                font-size: 20px;
+            }
+
+            .content-section p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="content-section" id="contentSection">
+            <h2 id="main-heading">1. Land Selection Tailored to Your Vision</h2>
+            <p id="main-description">Whether you're seeking investment growth or a personal retreat, we help you select
+                plots that align with your dreams — thoughtfully located, fertile, and culturally inspired.</p>
+        </div>
+
+        <div class="images-wrapper">
+            <div class="images" id="imageContainer">
+                <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=600&fit=crop"
+                    alt="Land Selection" class="main-image" data-index="0">
+                <img src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop"
+                    alt="Sustainable Farming" data-index="1">
+                <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop"
+                    alt="Investment Growth" data-index="2">
+                <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop"
+                    alt="Natural Beauty" data-index="3">
+                <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop"
+                    alt="Forest Land" data-index="4">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
+                    alt="Mountain Views" data-index="5">
+                <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=300&fit=crop"
+                    alt="Lakefront Property" data-index="6">
+                <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&h=300&fit=crop"
+                    alt="Rolling Hills" data-index="7">
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <!-- <button class="nav-button prev" onclick="navigateSlider('prev')">‹</button>
+        <button class="nav-button next" onclick="navigateSlider('next')">›</button> -->
+
+        <!-- Autoplay progress indicator -->
+        <div class="autoplay-progress">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Customize Controls -->
+        <div class="customize-panel">
+            <h3 class="customize-title">Customize</h3>
+            <div class="customize-grid">
+                <div class="customize-field">
+                    <label for="textAnimStyle">Animation Style</label>
+                    <div class="select-wrap">
+                        <select id="textAnimStyle">
+                            <option value="fade">Fade</option>
+                            <option value="slide">Slide</option>
+                            <option value="none">None</option>
+                        </select>
+                        <span class="select-chevron">⌄</span>
+                    </div>
+                </div>
+
+                <div class="customize-field">
+                    <label for="autoplayDelaySlider">Autoplay Delay (ms)</label>
+                    <div class="slider-row">
+                        <input type="range" id="autoplayDelaySlider" min="2000" max="8000" step="500" value="4000">
+                        <span class="field-value" id="autoplayDelayValue">4000</span>
+                    </div>
+                </div>
+
+                <div class="customize-field">
+                    <label for="textDurationSlider">Text Duration (s)</label>
+                    <div class="slider-row">
+                        <input type="range" id="textDurationSlider" min="0.2" max="1.2" step="0.1" value="0.3">
+                        <span class="field-value" id="textDurationValue">0.3</span>
+                    </div>
+                </div>
+
+                <div class="customize-field">
+                    <label for="autoplayToggle">Autoplay</label>
+                    <button type="button" class="toggle-switch active" id="autoplayToggle" role="switch"
+                        aria-checked="true">
+                        <span class="toggle-knob"></span>
+                    </button>
+                </div>
+
+                <div class="customize-field">
+                    <label for="textAnimToggle">Text Animation</label>
+                    <button type="button" class="toggle-switch active" id="textAnimToggle" role="switch"
+                        aria-checked="true">
+                        <span class="toggle-knob"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SmoothImageSlider {
+            constructor() {
+                this.imageContainer = document.getElementById('imageContainer');
+                this.realImages = Array.from(this.imageContainer.querySelectorAll('img'));
+                this.heading = document.getElementById('main-heading');
+                this.description = document.getElementById('main-description');
+                this.contentSection = document.getElementById('contentSection');
+                this.progressFill = document.getElementById('progressFill');
+                this.autoplayToggle = document.getElementById('autoplayToggle');
+                this.textAnimToggle = document.getElementById('textAnimToggle');
+                this.textAnimStyleSelect = document.getElementById('textAnimStyle');
+                this.autoplayDelaySlider = document.getElementById('autoplayDelaySlider');
+                this.autoplayDelayValue = document.getElementById('autoplayDelayValue');
+                this.textDurationSlider = document.getElementById('textDurationSlider');
+                this.textDurationValue = document.getElementById('textDurationValue');
+
+                this.currentIndex = 0;
+                this.isAnimating = false;
+                this.slideWidth = 320;
+                this.currentOffset = 0;
+                // Must cover the longest transition on the strip: .images img
+                // animates width/height/transform for 1s, .images only 0.8s.
+                this.transitionDuration = 1000;
+
+                // Auto-scroll properties
+                this.isPlaying = true;
+                this.autoScrollInterval = null;
+                this.progressInterval = null;
+                this.autoScrollDelay = Number(this.autoplayDelaySlider.value);
+                this.progressCounter = 0;
+
+                // Text animation properties
+                this.textAnimEnabled = true;
+                this.textAnimStyle = 'fade'; // 'fade' | 'slide' | 'none'
+                this.textAnimDuration = Number(this.textDurationSlider.value);
+                this.contentSection.style.setProperty('--text-anim-duration', `${this.textAnimDuration}s`);
+
+                this.content = [
+                    {
+                        title: "1. Land Selection Tailored to Your Vision",
+                        description: "Whether you're seeking investment growth or a personal retreat, we help you select plots that align with your dreams — thoughtfully located, fertile, and culturally inspired."
+                    },
+                    {
+                        title: "2. Sustainable Farming Solutions",
+                        description: "Transform your land into a productive agricultural asset with our expert guidance on sustainable farming practices, crop selection, and modern irrigation techniques."
+                    },
+                    {
+                        title: "3. Investment Growth Opportunities",
+                        description: "Discover prime land investments with exceptional growth potential. Our market analysis ensures you make informed decisions for long-term financial success."
+                    },
+                    {
+                        title: "4. Natural Beauty & Serenity",
+                        description: "Experience the perfect blend of natural beauty and tranquility. Each property offers breathtaking landscapes that provide both aesthetic and emotional value."
+                    },
+                    {
+                        title: "5. Forest Land Conservation",
+                        description: "Invest in forest conservation while building wealth. Our forest land options provide ecological benefits and sustainable returns for environmentally conscious investors."
+                    },
+                    {
+                        title: "6. Mountain Views & Fresh Air",
+                        description: "Escape to elevated living with stunning mountain vistas. These high-altitude properties offer clean air, scenic beauty, and exclusive recreational opportunities."
+                    },
+                    {
+                        title: "7. Lakefront Property Investment",
+                        description: "Secure waterfront land with premium investment potential. Lakefront properties offer recreational benefits, scenic value, and consistent appreciation rates."
+                    },
+                    {
+                        title: "8. Rolling Hills & Pastoral Charm",
+                        description: "Embrace the pastoral lifestyle with gently rolling hills perfect for agriculture, recreation, or simply enjoying the peaceful countryside atmosphere."
+                    }
+                ];
+
+                this.init();
+            }
+
+            init() {
+                this.setSlideWidth();
+                this.setupInfiniteLoop();
+                this.addEventListeners();
+                this.startAutoScroll();
+                window.addEventListener('resize', () => {
+                    const previousWidth = this.slideWidth;
+                    this.setSlideWidth();
+                    // The offset is a multiple of slideWidth, so crossing the
+                    // breakpoint invalidates it — re-seat the strip.
+                    if (previousWidth !== this.slideWidth) {
+                        this.applyInstantly(() => this.positionTrack(this.trackIndex));
+                    }
+                });
+            }
+
+            setSlideWidth() {
+                const screenWidth = window.innerWidth;
+                if (screenWidth >= 800 && screenWidth <= 1200) {
+                    this.slideWidth = 220;
+                } else {
+                    this.slideWidth = 320;
+                }
+            }
+
+            // Pads the strip with a full copy of every slide on each side:
+            // [clones 0..7][real 0..7][clones 0..7]. Autoplay walks off the end
+            // of the real block into a clone, then snaps back by one block width
+            // once the slide settles. The clone and its real counterpart show the
+            // same image in the same place with the same neighbours, so the snap
+            // is invisible and the carousel reads as one endless forward loop.
+            // A full block (rather than a single clone) keeps thumbnails on both
+            // sides of the main image throughout the wrap.
+            setupInfiniteLoop() {
+                const leading = this.realImages.map((img) => this.makeClone(img));
+                const trailing = this.realImages.map((img) => this.makeClone(img));
+
+                leading.forEach((clone) => this.imageContainer.insertBefore(clone, this.realImages[0]));
+                trailing.forEach((clone) => this.imageContainer.appendChild(clone));
+
+                this.images = Array.from(this.imageContainer.querySelectorAll('img'));
+                // Real slide 0 sits at this track index; the real block spans
+                // realStart .. realStart + realImages.length - 1.
+                this.realStart = this.realImages.length;
+
+                this.applyInstantly(() => this.positionTrack(this.realStart));
+            }
+
+            makeClone(img) {
+                const clone = img.cloneNode(true);
+                clone.classList.remove('main-image');
+                clone.dataset.clone = 'true';
+                return clone;
+            }
+
+            trackToRealIndex(track) {
+                const blockSize = this.realImages.length;
+                return ((track % blockSize) + blockSize) % blockSize;
+            }
+
+            // Runs a repositioning with every transition suppressed so the strip
+            // jumps instantly instead of sliding.
+            applyInstantly(reposition) {
+                this.imageContainer.style.transition = 'none';
+                this.images.forEach((img) => { img.style.transition = 'none'; });
+
+                reposition();
+                void this.imageContainer.offsetHeight; // flush before re-enabling
+
+                this.imageContainer.style.transition = '';
+                this.images.forEach((img) => { img.style.transition = ''; });
+            }
+
+            // Seats the given track index in the main-image slot.
+            positionTrack(track) {
+                this.trackIndex = track;
+                this.currentIndex = this.trackToRealIndex(track);
+                this.currentOffset = -track * this.slideWidth;
+                this.imageContainer.style.transform = `translateX(${this.currentOffset}px)`;
+                this.updateMainImageByTrack(track);
+            }
+
+            addEventListeners() {
+                // Image click events. Bound by track index rather than real index
+                // so the clones flanking the strip are clickable too — near a wrap
+                // the visible thumbnails are clones, and they must respond.
+                this.images.forEach((img, track) => {
+                    img.addEventListener('click', () => {
+                        if (track !== this.trackIndex) {
+                            this.moveToTrack(track);
+                            this.resetAutoScroll();
+                        }
+                    });
+                });
+
+                // Autoplay toggle switch
+                this.autoplayToggle.addEventListener('click', () => {
+                    this.toggleAutoScroll();
+                });
+
+                // Text animation toggle switch
+                this.textAnimToggle.addEventListener('click', () => {
+                    this.textAnimEnabled = !this.textAnimEnabled;
+                    this.textAnimToggle.classList.toggle('active', this.textAnimEnabled);
+                    this.textAnimToggle.setAttribute('aria-checked', String(this.textAnimEnabled));
+                });
+
+                // Text animation style
+                this.textAnimStyleSelect.addEventListener('change', (e) => {
+                    this.textAnimStyle = e.target.value;
+                });
+
+                // Autoplay delay slider
+                this.autoplayDelaySlider.addEventListener('input', (e) => {
+                    this.autoScrollDelay = Number(e.target.value);
+                    this.autoplayDelayValue.textContent = this.autoScrollDelay;
+                    if (this.isPlaying) {
+                        this.stopAutoScroll();
+                        this.startAutoScroll();
+                    }
+                });
+
+                // Text animation duration slider
+                this.textDurationSlider.addEventListener('input', (e) => {
+                    this.textAnimDuration = Number(e.target.value);
+                    this.textDurationValue.textContent = this.textAnimDuration.toFixed(1);
+                    this.contentSection.style.setProperty('--text-anim-duration', `${this.textAnimDuration}s`);
+                });
+
+                // Pause on hover
+                this.imageContainer.addEventListener('mouseenter', () => {
+                    if (this.isPlaying) {
+                        this.pauseAutoScroll();
+                    }
+                });
+
+                this.imageContainer.addEventListener('mouseleave', () => {
+                    if (this.isPlaying) {
+                        this.resumeAutoScroll();
+                    }
+                });
+            }
+
+            navigateTo(realIndex) {
+                if (realIndex < 0 || realIndex >= this.realImages.length) {
+                    return;
+                }
+                this.moveToTrack(realIndex + this.realStart);
+            }
+
+            navigateNext() {
+                this.moveToTrack(this.trackIndex + 1);
+            }
+
+            navigatePrev() {
+                this.moveToTrack(this.trackIndex - 1);
+            }
+
+            // Slides the strip to the given track position, which may be a clone
+            // just outside the real block.
+            moveToTrack(targetTrack) {
+                if (this.isAnimating || targetTrack === this.trackIndex) {
+                    return;
+                }
+
+                this.isAnimating = true;
+                this.updateContentWithTransition(this.trackToRealIndex(targetTrack));
+                this.positionTrack(targetTrack);
+
+                // Stay locked until the snap is done, so a queued move can never
+                // start mid-transition and have the snap fire underneath it.
+                setTimeout(() => {
+                    this.normalizeTrack();
+                    this.isAnimating = false;
+                }, this.transitionDuration);
+            }
+
+            // Once a slide settles on a clone, re-seat onto the identical real
+            // slide so the next step continues forward from inside the real block
+            // instead of rewinding across the whole strip.
+            normalizeTrack() {
+                const blockSize = this.realImages.length;
+
+                if (this.trackIndex < this.realStart) {
+                    this.applyInstantly(() => this.positionTrack(this.trackIndex + blockSize));
+                } else if (this.trackIndex >= this.realStart + blockSize) {
+                    this.applyInstantly(() => this.positionTrack(this.trackIndex - blockSize));
+                }
+            }
+
+            updateMainImageByTrack(targetTrack) {
+                this.images.forEach((img, index) => {
+                    if (index === targetTrack) {
+                        img.classList.add('main-image');
+                    } else {
+                        img.classList.remove('main-image');
+                    }
+                });
+            }
+
+            updateContentWithTransition(targetIndex) {
+                const currentContent = this.content[targetIndex];
+
+                if (!this.textAnimEnabled || this.textAnimStyle === 'none') {
+                    this.contentSection.classList.remove('fade-in', 'fade-out', 'slide-in', 'slide-out');
+                    this.heading.textContent = currentContent.title;
+                    this.description.textContent = currentContent.description;
+                    return;
+                }
+
+                const outClass = this.textAnimStyle === 'slide' ? 'slide-out' : 'fade-out';
+                const inClass = this.textAnimStyle === 'slide' ? 'slide-in' : 'fade-in';
+
+                this.contentSection.classList.remove('fade-in', 'slide-in');
+                this.contentSection.classList.add(outClass);
+
+                setTimeout(() => {
+                    this.heading.textContent = currentContent.title;
+                    this.description.textContent = currentContent.description;
+
+                    this.contentSection.classList.remove('fade-out', 'slide-out');
+                    this.contentSection.classList.add(inClass);
+                }, this.textAnimDuration * 1000 * 0.4);
+            }
+
+            // Auto-scroll methods
+            startAutoScroll() {
+                if (!this.isPlaying) return;
+                
+                this.resetProgress();
+                this.startProgress();
+                
+                this.autoScrollInterval = setInterval(() => {
+                    this.navigateNext();
+                }, this.autoScrollDelay);
+            }
+
+            stopAutoScroll() {
+                if (this.autoScrollInterval) {
+                    clearInterval(this.autoScrollInterval);
+                    this.autoScrollInterval = null;
+                }
+                this.stopProgress();
+            }
+
+            pauseAutoScroll() {
+                this.stopAutoScroll();
+            }
+
+            resumeAutoScroll() {
+                if (this.isPlaying) {
+                    this.startAutoScroll();
+                }
+            }
+
+            resetAutoScroll() {
+                this.stopAutoScroll();
+                if (this.isPlaying) {
+                    setTimeout(() => {
+                        this.startAutoScroll();
+                    }, 1000);
+                }
+            }
+
+            toggleAutoScroll() {
+                this.isPlaying = !this.isPlaying;
+                this.autoplayToggle.classList.toggle('active', this.isPlaying);
+                this.autoplayToggle.setAttribute('aria-checked', String(this.isPlaying));
+
+                if (this.isPlaying) {
+                    this.startAutoScroll();
+                } else {
+                    this.stopAutoScroll();
+                    this.resetProgress();
+                }
+            }
+
+            startProgress() {
+                this.progressCounter = 0;
+                const updateInterval = 50; // Update every 50ms
+                const increment = (updateInterval / this.autoScrollDelay) * 100;
+
+                this.progressInterval = setInterval(() => {
+                    this.progressCounter += increment;
+                    if (this.progressCounter >= 100) {
+                        this.progressCounter = 0;
+                    }
+                    this.progressFill.style.width = `${this.progressCounter}%`;
+                }, updateInterval);
+            }
+
+            stopProgress() {
+                if (this.progressInterval) {
+                    clearInterval(this.progressInterval);
+                    this.progressInterval = null;
+                }
+            }
+
+            resetProgress() {
+                this.progressCounter = 0;
+                this.progressFill.style.width = '0%';
+            }
+        }
+
+        // Initialize the slider
+        let slider;
+        document.addEventListener('DOMContentLoaded', () => {
+            slider = new SmoothImageSlider();
+        });
+
+        // Navigation functions for buttons
+        function navigateSlider(direction) {
+            if (!slider) return;
+
+            if (direction === 'next') {
+                slider.navigateNext();
+            } else if (direction === 'prev') {
+                slider.navigatePrev();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!slider) return;
+
+            if (e.key === 'ArrowLeft') {
+                slider.navigatePrev();
+            } else if (e.key === 'ArrowRight') {
+                slider.navigateNext();
+            }
+        });
+    </script>
+</body>
+
+</html>
