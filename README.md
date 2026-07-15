@@ -21,7 +21,7 @@ no build step, no npm packages, no framework.
 Download `index.html` and open it in a browser — that's the whole setup:
 
 ```
-git clone https://github.com/<your-username>/spotlight-carousel.git
+git clone https://github.com/ramana-chary/spotlight-carousel.git
 ```
 
 Or just download the single file directly and open it.
